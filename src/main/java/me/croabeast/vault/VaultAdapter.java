@@ -97,6 +97,21 @@ public interface VaultAdapter<T> {
     boolean isInGroup(Player player, String group);
 
     /**
+     * Checks if the specified player is in the given group as their primary group.
+     * <p>
+     * This is a convenience method that compares the player's primary group to the specified group name.
+     * </p>
+     *
+     * @param player the player to check
+     * @param group the name of the group
+     * @return {@code true} if the player's primary group matches the specified group; {@code false} otherwise
+     */
+    default boolean isPrimaryGroup(Player player, String group) {
+        String primary = getPrimaryGroup(player);
+        return primary != null && primary.equalsIgnoreCase(group);
+    }
+
+    /**
      * Retrieves all groups the specified player belongs to.
      *
      * @param player the player for whom to retrieve group memberships

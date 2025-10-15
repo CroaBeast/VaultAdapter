@@ -10,6 +10,8 @@ version = "1.0"
 
 repositories {
     mavenCentral()
+    mavenLocal()
+
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
     maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
     maven("https://jitpack.io")
@@ -39,8 +41,12 @@ tasks.withType<JavaCompile>().configureEach {
     targetCompatibility = "1.8"
 }
 
+tasks.shadowJar {
+    exclude("META-INF/**")
+}
+
 tasks.build {
-    dependsOn("shadowJar")
+    dependsOn(tasks.shadowJar)
 }
 
 tasks.processResources {
