@@ -48,7 +48,6 @@ jobs:
           VERSION=$(./gradlew -q properties | grep '^version:' | awk '{print $2}')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      # Borra release/tag duplicados si existe el mismo tag
       - name: Delete existing GitHub release (if exists)
         run: |
           RELEASE_ID=$(gh release view ${{ env.VERSION }} --json id -q '.id' || echo "")
@@ -69,7 +68,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Prepara el JAR sombrado como "latest" para el Release
       - name: Rename & Upload Latest Release artifact
         run: |
           SHADOW_JAR=$(ls build/libs/${{ github.event.repository.name }}-*all.jar | head -n 1)
