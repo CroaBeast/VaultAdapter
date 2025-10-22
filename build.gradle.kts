@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "me.croabeast"
-version = "1.0"
+version = "1.1"
 
 repositories {
     mavenCentral()
@@ -15,6 +15,7 @@ repositories {
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
     maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
     maven("https://jitpack.io")
+    maven("https://repo.codemc.io/repository/creatorfromhell/")
 }
 
 java {
@@ -33,6 +34,7 @@ dependencies {
 
     compileOnly("net.luckperms:api:5.5")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7")
+    compileOnly("net.milkbowl.vault:VaultUnlockedAPI:2.16")
 }
 
 tasks.withType<JavaCompile>().configureEach {
@@ -46,7 +48,7 @@ tasks.shadowJar {
 }
 
 tasks.build {
-    dependsOn(tasks.shadowJar)
+    dependsOn("shadowJar")
 }
 
 tasks.processResources {
