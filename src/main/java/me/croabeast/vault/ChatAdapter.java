@@ -223,14 +223,18 @@ public interface ChatAdapter<T> {
      */
     @NotNull
     static ChatAdapter<?> create() {
-        if (Bukkit.getPluginManager().isPluginEnabled("LuckPerms"))
-            return new ChatLuckPerms();
+        try {
+            if (Bukkit.getPluginManager().isPluginEnabled("LuckPerms"))
+                return new ChatLuckPerms();
 
-        if (Bukkit.getPluginManager().isPluginEnabled("VaultUnlocked"))
-            return new ChatVault2();
+            if (Bukkit.getPluginManager().isPluginEnabled("VaultUnlocked"))
+                return new ChatVault2();
 
-        if (Bukkit.getPluginManager().isPluginEnabled("Vault"))
-            return new ChatVaultImpl();
+            if (Bukkit.getPluginManager().isPluginEnabled("Vault"))
+                return new ChatVaultImpl();
+        } catch (Exception e) {
+            return new ChatFallback();
+        }
 
         return new ChatFallback();
     }

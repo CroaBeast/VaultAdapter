@@ -1,5 +1,4 @@
 plugins {
-    kotlin("jvm") version "2.3.0-Beta1"
     id("java-library")
     id("io.freefair.lombok") version "8.10"
     id("com.gradleup.shadow") version "8.3.0"
@@ -49,13 +48,4 @@ tasks.shadowJar {
 
 tasks.build {
     dependsOn("shadowJar")
-}
-
-tasks.processResources {
-    val props = mapOf("version" to version)
-    inputs.properties(props)
-    filteringCharset = "UTF-8"
-    filesMatching("plugin.yml") {
-        expand(props)
-    }
 }

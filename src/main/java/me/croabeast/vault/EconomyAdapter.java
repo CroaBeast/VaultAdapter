@@ -109,17 +109,21 @@ public interface EconomyAdapter<T> {
 
     /**
      * Creates an {@link EconomyAdapter} bound to the first available provider.
-     * <p><strong>Selection order:</strong> Vault → Fallback.</p>
+     * <p><strong>Selection order:</strong> VaultUnlocked → Vault → Fallback.</p>
      *
      * @return a non-null adapter (never {@code null})
      */
     @NotNull
     static EconomyAdapter<?> create() {
-        if (Bukkit.getPluginManager().isPluginEnabled("VaultUnlocked"))
-            return new Economy2();
+        try {
+            if (Bukkit.getPluginManager().isPluginEnabled("VaultUnlocked"))
+                return new Economy2();
 
-        return Bukkit.getPluginManager().isPluginEnabled("Vault")
-                ? new EconomyImpl()
-                : new EconomyFallback();
+            return Bukkit.getPluginManager().isPluginEnabled("Vault")
+                    ? new EconomyImpl()
+                    : new EconomyFallback();
+        } catch (Exception e) {
+            return new EconomyFallback();
+        }
     }
 }
