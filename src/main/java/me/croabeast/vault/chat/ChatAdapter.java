@@ -1,14 +1,13 @@
-package me.croabeast.vault;
+package me.croabeast.vault.chat;
 
+import me.croabeast.vault.BaseAdapter;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * A thin, provider-agnostic facade for chat/permission metadata (prefixes, suffixes, groups).
@@ -31,56 +30,7 @@ import java.util.function.Function;
  * @param <T> the underlying provider type (e.g., LuckPerms API or Vault service)
  * @since 1.1
  */
-public interface ChatAdapter<T> {
-
-    /**
-     * Returns the underlying provider instance used by this adapter.
-     * <p>
-     * Typical examples are an instance of the LuckPerms API or a Vault Chat/Permissions
-     * service. Consumers can use {@link #fromSource(Function)} to safely extract
-     * provider-specific details without introducing hard dependencies.
-     * </p>
-     *
-     * @return the non-null underlying provider instance
-     */
-    @NotNull
-    T getSource();
-
-    /**
-     * The plugin that owns the underlying provider, when available.
-     * <p>
-     * For example, the LuckPerms or Vault plugin. Fallback implementations may
-     * return {@code null}.
-     * </p>
-     *
-     * @return the provider plugin or {@code null} if unknown/unavailable
-     */
-    Plugin getPlugin();
-
-    /**
-     * Indicates whether the underlying provider is currently usable.
-     * <p>
-     * Providers may become unavailable if the backing plugin is disabled at runtime.
-     * </p>
-     *
-     * @return {@code true} if the adapter is backed by an active provider
-     */
-    boolean isEnabled();
-
-    /**
-     * Applies a mapping function to the underlying provider.
-     * <p>
-     * Useful for optional, provider-specific access without introducing a compile-time
-     * dependency in your main code path.
-     * </p>
-     *
-     * @param <V>      result type
-     * @param function the function applied to {@link #getSource()}
-     * @return the function result
-     */
-    default <V> V fromSource(Function<T, V> function) {
-        return function.apply(getSource());
-    }
+public interface ChatAdapter<T> extends BaseAdapter<T> {
 
     /**
      * Returns the player's primary/parent group name, as defined by the provider.
@@ -230,12 +180,10 @@ public interface ChatAdapter<T> {
             if (Bukkit.getPluginManager().isPluginEnabled("VaultUnlocked"))
                 return new ChatVault2();
 
-            if (Bukkit.getPluginManager().isPluginEnabled("Vault"))
-                return new ChatVaultImpl();
+            return Bukkit.getPluginManager().isPluginEnabled("Vault") ?
+                    new ChatVaultImpl() : new ChatFallback();
         } catch (Exception e) {
             return new ChatFallback();
         }
-
-        return new ChatFallback();
     }
 }

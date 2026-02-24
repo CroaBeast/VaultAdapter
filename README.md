@@ -15,15 +15,14 @@ No hard dependency on a specific ecosystem: the adapter chooses the first availa
 
 - **Zero hard-coupling**: target a stable API while supporting multiple backends.
 - **Graceful fallback**: never throws just because Vault/LuckPerms are missing.
-- **Simple return types**: booleans for mutations; `null` when metadata is genuinely absent.
+- **Rich economy result model**: mutations return `Transaction` with status, amount, and resulting balance.
+- **Consistent nullability**: `null` when metadata is genuinely absent.
 - **Optional provider access**: `fromSource(Function<T,V>)` for advanced use without polluting your codebase.
 
 ### Provider selection order
 
-1. **LuckPerms** (if enabled)  
-2. **VaultUnlocked** (if enabled)  
-3. **Vault** (if enabled)  
-4. **Fallback** (no-op, safe defaults)
+- **ChatAdapter**: LuckPerms → VaultUnlocked → Vault → Fallback
+- **EconomyAdapter**: VaultUnlocked → Vault → Fallback
 
 ---
 
@@ -41,7 +40,7 @@ repositories {
 dependencies {
     implementation("me.croabeast:VaultAdapter:{version}")
 }
-````
+```
 
 ### Gradle (Groovy)
 
@@ -98,7 +97,7 @@ softdepend:
 ### Chat metadata
 
 ```java
-import me.croabeast.vault.ChatAdapter;
+import me.croabeast.vault.chat.ChatAdapter;
 import org.bukkit.entity.Player;
 
 public class ChatExample {
@@ -123,18 +122,24 @@ public class ChatExample {
 ### Economy
 
 ```java
-import me.croabeast.vault.EconomyAdapter;
+import me.croabeast.vault.economy.EconomyAdapter;
+import me.croabeast.vault.economy.Transaction;
 import org.bukkit.OfflinePlayer;
 
+import java.math.BigDecimal;
+
 public class EconomyExample {
-    public boolean buy(OfflinePlayer player, double price) {
+    public boolean buy(OfflinePlayer player, BigDecimal price) {
         EconomyAdapter<?> eco = EconomyAdapter.create();
         if (!eco.isEnabled()) return false;
 
         if (!eco.hasAmount(player, price)) return false;
-        if (!eco.withdraw(player, price)) return false;
+
+        Transaction tx = eco.withdraw(player, price);
+        if (!tx.isSuccessful()) return false;
 
         // grant item/service here
+        // BigDecimal currentBalance = tx.getBalance();
         return true;
     }
 }
@@ -167,12 +172,22 @@ var providerInfo = chat.fromSource(src -> src.getClass().getSimpleName()); // ex
 
 ### `EconomyAdapter<T>`
 
-* `double getBalance(OfflinePlayer)`
-* `boolean withdraw(OfflinePlayer, double)`
-* `boolean deposit(OfflinePlayer, double)`
-* `boolean hasAmount(OfflinePlayer, double)`
+* `@NotNull BigDecimal getBalance(OfflinePlayer)`
+* `boolean hasAccount(OfflinePlayer)`
+* `boolean createAccount(OfflinePlayer)`
+* `boolean hasAmount(OfflinePlayer, BigDecimal)` + convenience overload
+* `@NotNull Transaction withdraw(OfflinePlayer, BigDecimal)` + convenience overload
+* `@NotNull Transaction deposit(OfflinePlayer, BigDecimal)` + convenience overload
 * `boolean isEnabled()`, `Plugin getPlugin()`, `T getSource()`, `<V> V fromSource(Function<T,V>)`
 * `static EconomyAdapter<?> create()`
+
+### `Transaction`
+
+* `@NotNull BigDecimal getAmount()`
+* `@NotNull BigDecimal getBalance()`
+* `@NotNull Transaction.Type getType()` (`DEPOSIT` / `WITHDRAW`)
+* `boolean isSuccessful()`
+* `OfflinePlayer getPlayer()`
 
 ---
 
@@ -182,7 +197,8 @@ var providerInfo = chat.fromSource(src -> src.getClass().getSimpleName()); // ex
 * **World context**: If a provider doesn’t support per-world values, the world parameter is ignored.
 * **Threading**: Call from the **main server thread** unless your provider explicitly states otherwise.
 * **Formatting**: Returned prefixes/suffixes may contain legacy color codes. Translate or strip as needed.
-* **Amounts**: Negative/NaN/Infinite amounts are invalid and should result in `false` for mutations.
+* **Amounts**: Prefer `BigDecimal` overloads for exact values; invalid/negative amounts produce failed transactions (`isSuccessful() == false`).
+* **Fallback source**: `getSource()` on fallback adapters throws `IllegalStateException`; use `isEnabled()` checks first.
 
 ---
 
@@ -207,6 +223,6 @@ Follow the same semantics:
 * [ ] Declared `softdepend` on `LuckPerms`, `VaultUnlocked`, and `Vault`
 * [ ] Accessed adapters only on the main thread
 * [ ] Handled `null` prefixes/suffixes/primary groups
-* [ ] Validated amounts before economy operations
+* [ ] Checked `Transaction#isSuccessful()` for economy mutations
 
 ---

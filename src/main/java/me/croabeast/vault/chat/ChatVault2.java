@@ -1,7 +1,7 @@
-package me.croabeast.vault;
+package me.croabeast.vault.chat;
 
 import lombok.Getter;
-import net.milkbowl.vault.chat.Chat;
+import net.milkbowl.vault2.chat.Chat;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -14,11 +14,11 @@ import java.util.List;
 import java.util.Objects;
 
 @Getter
-final class ChatVaultImpl implements ChatAdapter<Chat> {
+final class ChatVault2 implements ChatAdapter<Chat> {
 
     private final Chat source;
 
-    ChatVaultImpl() {
+    ChatVault2() {
         source = Objects.requireNonNull(Bukkit.getServicesManager().getRegistration(Chat.class)).getProvider();
     }
 
@@ -73,6 +73,6 @@ final class ChatVaultImpl implements ChatAdapter<Chat> {
 
     @Override
     public String toString() {
-        return "ChatAdapter{provider='Vault', plugin='" + source.getName() + "'}";
+        return "ChatAdapter{provider='VaultUnlocked', plugin='" + source.getName() + "'}";
     }
 }

@@ -1,4 +1,4 @@
-package me.croabeast.vault;
+package me.croabeast.vault.chat;
 
 import lombok.Getter;
 import net.luckperms.api.LuckPerms;

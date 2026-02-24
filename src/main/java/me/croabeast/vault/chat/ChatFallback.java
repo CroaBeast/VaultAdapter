@@ -1,4 +1,4 @@
-package me.croabeast.vault;
+package me.croabeast.vault.chat;
 
 import org.bukkit.World;
 import org.bukkit.entity.Player;
