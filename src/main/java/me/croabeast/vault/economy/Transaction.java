@@ -5,16 +5,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 
 /**
- * Represents the result of an economy operation for a player.
+ * Represents the result of an economy operation.
  *
  * <p>A transaction stores the requested {@link #amount}, the resulting
  * {@link #balance}, the operation {@link #type}, whether it was
- * {@link #successful}, and the target {@link #player}.</p>
+ * {@link #successful}, and the related {@link #sender}/{@link #receiver}
+ * participants.</p>
  */
 @RequiredArgsConstructor
 @Accessors(chain = true)
@@ -39,9 +41,19 @@ public class Transaction {
      */
     private boolean successful = false;
     /**
-     * Player associated with this transaction.
+     * Command sender associated with this transaction.
+     *
+     * <p>Commonly set for transfer operations. May be {@code null} for
+     * account-only operations.</p>
      */
-    private OfflinePlayer player = null;
+    private CommandSender sender = null;
+    /**
+     * Receiver player associated with this transaction.
+     *
+     * <p>Represents the target account affected by the operation. May be
+     * {@code null} when not applicable.</p>
+     */
+    private OfflinePlayer receiver = null;
 
     /**
      * Creates a transaction from primitive {@code double} values.
@@ -57,25 +69,25 @@ public class Transaction {
     /**
      * Creates a successful transaction with a zero resulting balance.
      *
+     * <p>The returned instance enforces successful state and does not allow
+     * {@link #setSuccessful(boolean)}.</p>
+     *
      * @param amount requested amount
      * @param type operation type
      * @return a successful transaction instance
      */
     @NotNull
     public static Transaction success(BigDecimal amount, Type type) {
-        return new Transaction(amount, BigDecimal.ZERO, type).setSuccessful(true);
-    }
-
-    /**
-     * Creates a failed transaction with a zero resulting balance.
-     *
-     * @param amount requested amount
-     * @param type operation type
-     * @return a failed transaction instance
-     */
-    @NotNull
-    public static Transaction failure(BigDecimal amount, Type type) {
-        return new Transaction(amount, BigDecimal.ZERO, type);
+        return new Transaction(amount, BigDecimal.ZERO, type) {
+            @Override
+            public boolean isSuccessful() {
+                return true;
+            }
+            @Override
+            public Transaction setSuccessful(boolean successful) {
+                throw new UnsupportedOperationException("Not supported.");
+            }
+        };
     }
 
     /**
@@ -87,7 +99,27 @@ public class Transaction {
      */
     @NotNull
     public static Transaction success(double amount, Type type) {
-        return new Transaction(amount, 0.0, type).setSuccessful(true);
+        return success(BigDecimal.valueOf(amount), type);
+    }
+
+    /**
+     * Creates a failed transaction with a zero resulting balance.
+     *
+     * <p>The returned instance enforces failed state and does not allow
+     * {@link #setSuccessful(boolean)}.</p>
+     *
+     * @param amount requested amount
+     * @param type operation type
+     * @return a failed transaction instance
+     */
+    @NotNull
+    public static Transaction failure(BigDecimal amount, Type type) {
+        return new Transaction(amount, BigDecimal.ZERO, type) {
+            @Override
+            public Transaction setSuccessful(boolean successful) {
+                throw new UnsupportedOperationException("Not supported.");
+            }
+        };
     }
 
     /**
@@ -99,7 +131,7 @@ public class Transaction {
      */
     @NotNull
     public static Transaction failure(double amount, Type type) {
-        return new Transaction(amount, 0.0, type);
+        return failure(BigDecimal.valueOf(amount), type);
     }
 
     /**
@@ -113,6 +145,14 @@ public class Transaction {
         /**
          * Money is removed from the account.
          */
-        WITHDRAW
+        WITHDRAW,
+        /**
+         * Account balance is set to an exact value.
+         */
+        SET,
+        /**
+         * Money is moved from a sender to a receiver account.
+         */
+        TRANSFER
     }
 }

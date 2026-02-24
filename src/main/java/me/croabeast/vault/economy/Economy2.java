@@ -5,6 +5,7 @@ import net.milkbowl.vault2.economy.Economy;
 import net.milkbowl.vault2.economy.EconomyResponse;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -53,17 +54,16 @@ final class Economy2 implements EconomyAdapter<Economy> {
 
     @NotNull
     private Transaction executeTransaction(OfflinePlayer player, BigDecimal amount, Transaction.Type type, Supplier<EconomyResponse> action) {
-        if (amount == null || amount.signum() < 0)
-            return Transaction.failure(amount, type).setPlayer(player);
+        Transaction transaction = Transaction.failure(amount, type);
 
-        try {
-            EconomyResponse response = action.get();
-            return new Transaction(amount, response.balance, type)
-                    .setPlayer(player)
-                    .setSuccessful(response.transactionSuccess());
-        } catch (Exception e) {
-            return Transaction.failure(amount, type).setPlayer(player);
-        }
+        if (amount != null && amount.signum() >= 0)
+            try {
+                EconomyResponse response = action.get();
+                transaction = new Transaction(amount, response.balance, type)
+                        .setSuccessful(response.transactionSuccess());
+            } catch (Exception ignored) {}
+
+        return transaction.setReceiver(player);
     }
 
     @NotNull
@@ -80,6 +80,44 @@ final class Economy2 implements EconomyAdapter<Economy> {
                 player, amount, Transaction.Type.DEPOSIT,
                 () -> source.deposit(source.getName(), player.getUniqueId(), amount)
         );
+    }
+
+    @NotNull
+    public Transaction set(OfflinePlayer player, BigDecimal amount) {
+        return executeTransaction(
+                player, amount, Transaction.Type.SET,
+                () -> source.set(source.getName(), player.getUniqueId(), amount)
+        );
+    }
+
+    @NotNull
+    public Transaction transfer(CommandSender sender, OfflinePlayer receiver, BigDecimal amount) {
+        Transaction transaction = Transaction.failure(amount, Transaction.Type.TRANSFER);
+
+        if (amount != null && amount.signum() >= 0) {
+            boolean canDeposit = true;
+            try {
+                if (sender instanceof OfflinePlayer)
+                    canDeposit = withdraw((OfflinePlayer) sender, amount).isSuccessful();
+            } catch (Exception ignored) {
+                canDeposit = false;
+            }
+
+            boolean success = false;
+            BigDecimal balance = getBalance(receiver);
+
+            if (canDeposit)
+                try {
+                    Transaction temp = deposit(receiver, amount);
+                    balance = temp.getBalance();
+                    success = temp.isSuccessful();
+                } catch (Exception ignored) {}
+
+            (transaction = new Transaction(amount, balance, Transaction.Type.TRANSFER))
+                    .setSuccessful(success);
+        }
+
+        return transaction.setReceiver(receiver).setSender(sender);
     }
 
     @Override

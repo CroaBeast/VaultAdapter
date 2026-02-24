@@ -1,6 +1,7 @@
 package me.croabeast.vault.economy;
 
 import org.bukkit.OfflinePlayer;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,11 +41,21 @@ final class EconomyFallback implements EconomyAdapter<Object> {
 
     @NotNull
     public Transaction withdraw(OfflinePlayer player, BigDecimal amount) {
-        return new Transaction(amount, BigDecimal.ZERO, Transaction.Type.WITHDRAW).setPlayer(player);
+        return Transaction.failure(amount, Transaction.Type.WITHDRAW).setReceiver(player);
     }
 
     @NotNull
     public Transaction deposit(OfflinePlayer player, BigDecimal amount) {
-        return new Transaction(amount, BigDecimal.ZERO, Transaction.Type.DEPOSIT).setPlayer(player);
+        return Transaction.failure(amount, Transaction.Type.DEPOSIT).setReceiver(player);
+    }
+
+    @NotNull
+    public Transaction set(OfflinePlayer player, BigDecimal amount) {
+        return Transaction.failure(amount, Transaction.Type.SET).setReceiver(player);
+    }
+
+    @NotNull
+    public Transaction transfer(CommandSender sender, OfflinePlayer receiver, BigDecimal amount) {
+        return Transaction.failure(amount, Transaction.Type.TRANSFER).setSender(sender).setReceiver(receiver);
     }
 }
