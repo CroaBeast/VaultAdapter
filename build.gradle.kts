@@ -12,8 +12,9 @@ repositories {
     mavenLocal()
 
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
-    maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
     maven("https://jitpack.io")
+    maven("https://oss.sonatype.org/content/repositories/snapshots/")
+    maven("https://repo.codemc.io/repository/maven-public/")
     maven("https://repo.codemc.io/repository/creatorfromhell/")
 }
 
@@ -32,7 +33,7 @@ dependencies {
     compileOnly("org.spigotmc:spigot-api:1.16.5-R0.1-SNAPSHOT")
 
     compileOnly("net.luckperms:api:5.5")
-    compileOnly("com.github.MilkBowl:VaultAPI:1.7")
+    compileOnly("net.milkbowl.vault:VaultAPI:1.7")
     compileOnly("net.milkbowl.vault:VaultUnlockedAPI:2.16")
 }
 
@@ -41,6 +42,20 @@ tasks.withType<JavaCompile>().configureEach {
     sourceCompatibility = "1.8"
     targetCompatibility = "1.8"
     options.compilerArgs.add("-Xlint:-options")
+}
+
+tasks.withType<Javadoc>().configureEach {
+    isFailOnError = false
+
+    (options as StandardJavadocDocletOptions).apply {
+        addStringOption("Xdoclint:none", "-quiet")
+        encoding = "UTF-8"
+        charSet = "UTF-8"
+        docEncoding = "UTF-8"
+
+        if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_1_9))
+            addBooleanOption("html5", true)
+    }
 }
 
 tasks.shadowJar {

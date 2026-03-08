@@ -171,78 +171,160 @@ public interface ChatProvider {
 
     /**
      * Attempts to set an integer metadata value for a player.
+     *
+     * @param world world context (nullable)
+     * @param player target player
+     * @param node metadata key
+     * @param value value to set
      */
     void setMetadataInt(@Nullable World world, Player player, String node, int value);
 
     /**
      * Returns an integer metadata value for a group.
+     *
+     * @param world world context (nullable)
+     * @param group target group
+     * @param node metadata key
+     * @param defaultValue value returned when unsupported/missing
+     * @return resolved metadata value
      */
     int getGroupMetadataInt(@Nullable World world, String group, String node, int defaultValue);
 
     /**
      * Attempts to set an integer metadata value for a group.
+     *
+     * @param world world context (nullable)
+     * @param group target group
+     * @param node metadata key
+     * @param value value to set
      */
     void setGroupMetadataInt(@Nullable World world, String group, String node, int value);
 
     /**
      * Returns a double metadata value for a player.
+     *
+     * @param world world context (nullable)
+     * @param player target player
+     * @param node metadata key
+     * @param defaultValue value returned when unsupported/missing
+     * @return resolved metadata value
      */
     double getMetadataDouble(@Nullable World world, Player player, String node, double defaultValue);
 
     /**
      * Attempts to set a double metadata value for a player.
+     *
+     * @param world world context (nullable)
+     * @param player target player
+     * @param node metadata key
+     * @param value value to set
      */
     void setMetadataDouble(@Nullable World world, Player player, String node, double value);
 
     /**
      * Returns a double metadata value for a group.
+     *
+     * @param world world context (nullable)
+     * @param group target group
+     * @param node metadata key
+     * @param defaultValue value returned when unsupported/missing
+     * @return resolved metadata value
      */
     double getGroupMetadataDouble(@Nullable World world, String group, String node, double defaultValue);
 
     /**
      * Attempts to set a double metadata value for a group.
+     *
+     * @param world world context (nullable)
+     * @param group target group
+     * @param node metadata key
+     * @param value value to set
      */
     void setGroupMetadataDouble(@Nullable World world, String group, String node, double value);
 
     /**
      * Returns a boolean metadata value for a player.
+     *
+     * @param world world context (nullable)
+     * @param player target player
+     * @param node metadata key
+     * @param defaultValue value returned when unsupported/missing
+     * @return resolved metadata value
      */
     boolean getMetadataBoolean(@Nullable World world, Player player, String node, boolean defaultValue);
 
     /**
      * Attempts to set a boolean metadata value for a player.
+     *
+     * @param world world context (nullable)
+     * @param player target player
+     * @param node metadata key
+     * @param value value to set
      */
     void setMetadataBoolean(@Nullable World world, Player player, String node, boolean value);
 
     /**
      * Returns a boolean metadata value for a group.
+     *
+     * @param world world context (nullable)
+     * @param group target group
+     * @param node metadata key
+     * @param defaultValue value returned when unsupported/missing
+     * @return resolved metadata value
      */
     boolean getGroupMetadataBoolean(@Nullable World world, String group, String node, boolean defaultValue);
 
     /**
      * Attempts to set a boolean metadata value for a group.
+     *
+     * @param world world context (nullable)
+     * @param group target group
+     * @param node metadata key
+     * @param value value to set
      */
     void setGroupMetadataBoolean(@Nullable World world, String group, String node, boolean value);
 
     /**
      * Returns a string metadata value for a player.
+     *
+     * @param world world context (nullable)
+     * @param player target player
+     * @param node metadata key
+     * @param defaultValue value returned when unsupported/missing
+     * @return resolved metadata value
      */
     @Nullable
     String getMetadataString(@Nullable World world, Player player, String node, @Nullable String defaultValue);
 
     /**
      * Attempts to set a string metadata value for a player.
+     *
+     * @param world world context (nullable)
+     * @param player target player
+     * @param node metadata key
+     * @param value value to set
      */
     void setMetadataString(@Nullable World world, Player player, String node, @Nullable String value);
 
     /**
      * Returns a string metadata value for a group.
+     *
+     * @param world world context (nullable)
+     * @param group target group
+     * @param node metadata key
+     * @param defaultValue value returned when unsupported/missing
+     * @return resolved metadata value
      */
     @Nullable
     String getGroupMetadataString(@Nullable World world, String group, String node, @Nullable String defaultValue);
 
     /**
      * Attempts to set a string metadata value for a group.
+     *
+     * @param world world context (nullable)
+     * @param group target group
+     * @param node metadata key
+     * @param value value to set
      */
     void setGroupMetadataString(@Nullable World world, String group, String node, @Nullable String value);
 
