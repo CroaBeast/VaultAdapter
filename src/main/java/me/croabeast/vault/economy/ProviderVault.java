@@ -4,6 +4,7 @@ import lombok.Getter;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
@@ -13,14 +14,21 @@ import java.util.Objects;
 final class ProviderVault implements EconomyProvider {
 
     private final Economy source;
+    private final Plugin plugin;
 
-    ProviderVault(Economy source) {
+    ProviderVault(Economy source, Plugin plugin) {
         this.source = Objects.requireNonNull(source, "source");
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
     }
 
     @NotNull
     public String getName() {
         return source.getName();
+    }
+
+    @Override
+    public Plugin getPlugin() {
+        return plugin;
     }
 
     @Override

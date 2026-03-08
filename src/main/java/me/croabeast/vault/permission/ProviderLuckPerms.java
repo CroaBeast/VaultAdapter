@@ -22,9 +22,11 @@ import java.util.stream.Collectors;
 final class ProviderLuckPerms implements PermissionProvider {
 
     private final LuckPerms source;
+    private final Plugin plugin;
 
-    ProviderLuckPerms(LuckPerms source) {
+    ProviderLuckPerms(LuckPerms source, Plugin plugin) {
         this.source = Objects.requireNonNull(source, "source");
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
     }
 
     @Override
@@ -35,6 +37,11 @@ final class ProviderLuckPerms implements PermissionProvider {
     @NotNull
     public String getName() {
         return "LuckPerms";
+    }
+
+    @Override
+    public Plugin getPlugin() {
+        return plugin;
     }
 
     <T> T getAsUser(Player player, Function<User, T> function) {
@@ -210,8 +217,7 @@ final class ProviderLuckPerms implements PermissionProvider {
 
     @Override
     public String toString() {
-        Plugin plugin = Bukkit.getPluginManager().getPlugin("LuckPerms");
-        String version = plugin == null ? "unknown" : plugin.getDescription().getVersion();
+        String version = plugin.getDescription().getVersion();
         return "PermissionProvider{provider='LuckPerms', version=" + version + "}";
     }
 }

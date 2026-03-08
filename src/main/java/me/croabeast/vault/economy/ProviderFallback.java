@@ -1,6 +1,7 @@
 package me.croabeast.vault.economy;
 
 import org.bukkit.OfflinePlayer;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
@@ -11,6 +12,11 @@ enum ProviderFallback implements EconomyProvider {
     @NotNull
     public String getName() {
         return "None";
+    }
+
+    @Override
+    public Plugin getPlugin() {
+        return null;
     }
 
     @Override

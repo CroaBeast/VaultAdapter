@@ -4,6 +4,7 @@ import net.milkbowl.vault.permission.Permission;
 import org.bukkit.command.CommandSender;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,9 +16,11 @@ import java.util.Objects;
 final class ProviderVault implements PermissionProvider {
 
     private final Permission source;
+    private final Plugin plugin;
 
-    ProviderVault(Permission source) {
+    ProviderVault(Permission source, Plugin plugin) {
         this.source = Objects.requireNonNull(source, "source");
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
     }
 
     @Override
@@ -28,6 +31,11 @@ final class ProviderVault implements PermissionProvider {
     @NotNull
     public String getName() {
         return source.getName();
+    }
+
+    @Override
+    public Plugin getPlugin() {
+        return plugin;
     }
 
     @Override

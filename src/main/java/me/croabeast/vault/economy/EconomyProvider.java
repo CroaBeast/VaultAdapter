@@ -76,6 +76,13 @@ public interface EconomyProvider {
     String getName();
 
     /**
+     * Returns the owning plugin for this economy backend.
+     *
+     * @return owner plugin, or {@code null} when unsupported
+     */
+    Plugin getPlugin();
+
+    /**
      * Checks whether this economy backend is currently available.
      *
      * @return {@code true} if this backend can process economy operations

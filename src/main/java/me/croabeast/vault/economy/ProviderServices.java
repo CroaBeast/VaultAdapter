@@ -76,7 +76,7 @@ final class ProviderServices {
 
             Object provider = registration.getProvider();
             if (provider instanceof net.milkbowl.vault2.economy.Economy)
-                return new ProviderVault2((net.milkbowl.vault2.economy.Economy) provider);
+                return new ProviderVault2((net.milkbowl.vault2.economy.Economy) provider, registration.getPlugin());
         } catch (Throwable ignored) {}
 
         return null;
@@ -91,7 +91,7 @@ final class ProviderServices {
 
             Object provider = registration.getProvider();
             if (provider instanceof net.milkbowl.vault.economy.Economy)
-                return new ProviderVault((net.milkbowl.vault.economy.Economy) provider);
+                return new ProviderVault((net.milkbowl.vault.economy.Economy) provider, registration.getPlugin());
         } catch (Throwable ignored) {}
 
         return null;
@@ -131,4 +131,3 @@ final class ProviderServices {
         }
     }
 }
-

@@ -18,10 +18,12 @@ import java.util.function.Function;
 final class ProviderLuckPerms implements ChatProvider {
 
     private final LuckPerms source;
+    private final Plugin plugin;
     private final PermissionProvider permissions;
 
-    ProviderLuckPerms(LuckPerms source) {
+    ProviderLuckPerms(LuckPerms source, Plugin plugin) {
         this.source = Objects.requireNonNull(source, "source");
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.permissions = PermissionProvider.detect();
     }
 
@@ -33,6 +35,11 @@ final class ProviderLuckPerms implements ChatProvider {
     @NotNull
     public String getName() {
         return "LuckPerms";
+    }
+
+    @Override
+    public Plugin getPlugin() {
+        return plugin;
     }
 
     @NotNull
@@ -236,8 +243,7 @@ final class ProviderLuckPerms implements ChatProvider {
 
     @Override
     public String toString() {
-        Plugin plugin = Bukkit.getPluginManager().getPlugin("LuckPerms");
-        String version = plugin == null ? "unknown" : plugin.getDescription().getVersion();
+        String version = plugin.getDescription().getVersion();
         return "ChatProvider{provider='LuckPerms', version=" + version + "}";
     }
 }

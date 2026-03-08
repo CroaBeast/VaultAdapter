@@ -4,6 +4,7 @@ import me.croabeast.vault.permission.PermissionProvider;
 import net.milkbowl.vault.chat.Chat;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,10 +13,12 @@ import java.util.Objects;
 final class ProviderVault implements ChatProvider {
 
     private final Chat source;
+    private final Plugin plugin;
     private final PermissionProvider permissions;
 
-    ProviderVault(Chat source) {
+    ProviderVault(Chat source, Plugin plugin) {
         this.source = Objects.requireNonNull(source, "source");
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.permissions = PermissionProvider.detect();
     }
 
@@ -27,6 +30,11 @@ final class ProviderVault implements ChatProvider {
     @NotNull
     public String getName() {
         return source.getName();
+    }
+
+    @Override
+    public Plugin getPlugin() {
+        return plugin;
     }
 
     @NotNull

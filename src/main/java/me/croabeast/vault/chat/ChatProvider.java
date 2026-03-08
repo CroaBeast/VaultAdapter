@@ -28,6 +28,13 @@ public interface ChatProvider {
     String getName();
 
     /**
+     * Returns the owning plugin for this chat backend.
+     *
+     * @return owner plugin, or {@code null} when unsupported
+     */
+    Plugin getPlugin();
+
+    /**
      * Checks whether this chat backend is currently available.
      *
      * @return {@code true} if this backend can process chat operations

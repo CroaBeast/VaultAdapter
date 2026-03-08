@@ -3,6 +3,7 @@ package me.croabeast.vault.chat;
 import me.croabeast.vault.permission.PermissionProvider;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,6 +19,11 @@ final class ProviderFallback implements ChatProvider {
     @NotNull
     public String getName() {
         return "None";
+    }
+
+    @Override
+    public Plugin getPlugin() {
+        return null;
     }
 
     @NotNull

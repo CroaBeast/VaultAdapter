@@ -43,6 +43,13 @@ public interface PermissionProvider {
     String getName();
 
     /**
+     * Returns the owning plugin for this permission backend.
+     *
+     * @return owner plugin, or {@code null} when unsupported
+     */
+    Plugin getPlugin();
+
+    /**
      * Checks whether this permission backend is currently available.
      *
      * @return {@code true} if this backend can process permission operations
