@@ -1,22 +1,16 @@
 package me.croabeast.vault.economy;
 
 import org.bukkit.OfflinePlayer;
-import org.bukkit.command.CommandSender;
-import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 
-final class EconomyFallback implements EconomyAdapter<Object> {
+enum ProviderFallback implements EconomyProvider {
+    INSTANCE;
 
     @NotNull
-    public Object getSource() {
-        throw new IllegalStateException("No source was found");
-    }
-
-    @Override
-    public Plugin getPlugin() {
-        return null;
+    public String getName() {
+        return "None";
     }
 
     @Override
@@ -48,14 +42,6 @@ final class EconomyFallback implements EconomyAdapter<Object> {
     public Transaction deposit(OfflinePlayer player, BigDecimal amount) {
         return Transaction.failure(amount, Transaction.Type.DEPOSIT).setReceiver(player);
     }
-
-    @NotNull
-    public Transaction set(OfflinePlayer player, BigDecimal amount) {
-        return Transaction.failure(amount, Transaction.Type.SET).setReceiver(player);
-    }
-
-    @NotNull
-    public Transaction transfer(CommandSender sender, OfflinePlayer receiver, BigDecimal amount) {
-        return Transaction.failure(amount, Transaction.Type.TRANSFER).setSender(sender).setReceiver(receiver);
-    }
 }
+
+

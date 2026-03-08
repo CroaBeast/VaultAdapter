@@ -1,34 +1,35 @@
 # VaultAdapter
 
-Provider-agnostic facades for **chat/permission metadata** and **economy** in Bukkit/Spigot/Paper plugins.
+Provider-agnostic facades for Bukkit/Spigot/Paper plugins:
 
-This library exposes two tiny interfaces:
+- `EconomyProvider` for balances and account transactions
+- `PermissionProvider` for permissions and groups
+- `ChatProvider` for prefixes, suffixes, and metadata
 
-- `ChatAdapter<T>` — read prefixes, suffixes, primary group, and memberships from the active provider.
-- `EconomyAdapter<T>` — query balances and perform deposits/withdrawals via the active economy service.
+The goal is to keep plugin code stable while supporting multiple backends at runtime.
 
-No hard dependency on a specific ecosystem: the adapter chooses the first available provider at runtime and falls back safely if none are present.
+## Features
 
----
+- No hard dependency on a single permission/chat/economy ecosystem
+- Runtime provider detection with safe fallback providers
+- Optional registration into Bukkit services (VaultUnlocked and Vault)
+- Economy operations return a rich `Transaction` model
+- Explicit nullability for metadata that may not exist
 
-## ✨ Features
+## Provider Detection Order
 
-- **Zero hard-coupling**: target a stable API while supporting multiple backends.
-- **Graceful fallback**: never throws just because Vault/LuckPerms are missing.
-- **Rich economy result model**: mutations return `Transaction` with status, amount, and resulting balance.
-- **Consistent nullability**: `null` when metadata is genuinely absent.
-- **Optional provider access**: `fromSource(Function<T,V>)` for advanced use without polluting your codebase.
+- `ChatProvider`: LuckPerms -> VaultUnlocked -> Vault -> Fallback
+- `PermissionProvider`: LuckPerms -> VaultUnlocked -> Vault -> Fallback
+- `EconomyProvider`: VaultUnlocked -> Vault -> Fallback
 
-### Provider selection order
+Registration order for all providers is:
 
-- **ChatAdapter**: LuckPerms → VaultUnlocked → Vault → Fallback
-- **EconomyAdapter**: VaultUnlocked → Vault → Fallback
+- VaultUnlocked first
+- Vault second
 
----
+## Installation
 
-## 📦 Installation
-
-Replace `{version}` with the latest release tag.
+Replace `{version}` with your target release.
 
 ### Gradle (Kotlin DSL)
 
@@ -73,11 +74,9 @@ dependencies {
 </dependencies>
 ```
 
-> **Tip:** If you ship a plugin, consider `compileOnly` + runtime presence of providers (Vault/LuckPerms/VaultUnlocked) and add `softdepend` in your `plugin.yml`.
+If you are building a plugin, `compileOnly` + runtime providers is usually preferred.
 
----
-
-## ⚙️ `plugin.yml`
+## `plugin.yml` Example
 
 ```yaml
 name: YourPlugin
@@ -90,31 +89,30 @@ softdepend:
   - Vault
 ```
 
----
+## Usage
 
-## 🧩 Usage
+### Chat + Permission
 
-### Chat metadata
+`ChatProvider` now exposes permission/group operations through `getPermissionProvider()`.
 
 ```java
-import me.croabeast.vault.chat.ChatAdapter;
+import me.croabeast.vault.chat.ChatProvider;
+import me.croabeast.vault.permission.PermissionProvider;
 import org.bukkit.entity.Player;
 
-public class ChatExample {
+public final class ChatExample {
+
     public void show(Player player) {
-        ChatAdapter<?> chat = ChatAdapter.create();
+        ChatProvider chat = ChatProvider.detect();
         if (!chat.isEnabled()) return;
 
-        String prefix  = chat.getPrefix(player);          // may be null
-        String suffix  = chat.getSuffix(player);          // may be null
-        String primary = chat.getPrimaryGroup(player);    // may be null
+        String prefix = chat.getPrefix(player);
+        String suffix = chat.getSuffix(player);
 
-        boolean isStaff = chat.isInGroup(player, "staff");
-        boolean isModPrimary = chat.isPrimaryGroup(player, "moderator");
-
-        // Group metadata (world-aware example)
-        String vipPrefix = chat.getGroupPrefix(player.getWorld(), "vip");
-        // ...format and display as you like
+        PermissionProvider permissions = chat.getPermissionProvider();
+        boolean canModerate = permissions.hasPermission(player, "myplugin.moderate");
+        String primaryGroup = permissions.getPrimaryGroup(player);
+        boolean staff = permissions.isInGroup(player, "staff");
     }
 }
 ```
@@ -122,107 +120,222 @@ public class ChatExample {
 ### Economy
 
 ```java
-import me.croabeast.vault.economy.EconomyAdapter;
+import me.croabeast.vault.economy.EconomyProvider;
 import me.croabeast.vault.economy.Transaction;
 import org.bukkit.OfflinePlayer;
 
 import java.math.BigDecimal;
 
-public class EconomyExample {
-    public boolean buy(OfflinePlayer player, BigDecimal price) {
-        EconomyAdapter<?> eco = EconomyAdapter.create();
-        if (!eco.isEnabled()) return false;
+public final class EconomyExample {
 
+    public boolean buy(OfflinePlayer player, BigDecimal price) {
+        EconomyProvider eco = EconomyProvider.detect();
+        if (!eco.isEnabled()) return false;
         if (!eco.hasAmount(player, price)) return false;
 
         Transaction tx = eco.withdraw(player, price);
-        if (!tx.isSuccessful()) return false;
-
-        // grant item/service here
-        // BigDecimal currentBalance = tx.getBalance();
-        return true;
+        return tx.isSuccessful();
     }
 }
 ```
 
-### Optional: provider-specific access
-
-If you need a one-off capability not covered by the facade (e.g., calling a LuckPerms method directly), use `fromSource` to avoid hard dependencies in most of your code:
+### Register Your Own Economy Provider
 
 ```java
-var chat = ChatAdapter.<Object>create();
-var providerInfo = chat.fromSource(src -> src.getClass().getSimpleName()); // example: "LPApi" / "VaultChat"
+import me.croabeast.vault.economy.EconomyProvider;
+import me.croabeast.vault.economy.Transaction;
+import org.bukkit.OfflinePlayer;
+
+import java.math.BigDecimal;
+
+public final class MyEconomyBackend implements EconomyProvider {
+
+    @Override public String getName() { return "MyEconomy"; }
+    @Override public boolean isEnabled() { return true; }
+    @Override public boolean hasAccount(OfflinePlayer player) { return true; }
+    @Override public boolean createAccount(OfflinePlayer player) { return true; }
+    @Override public BigDecimal getBalance(OfflinePlayer player) { return BigDecimal.TEN; }
+
+    @Override
+    public Transaction withdraw(OfflinePlayer player, BigDecimal amount) {
+        BigDecimal current = getBalance(player);
+        BigDecimal next = current.subtract(amount);
+
+        return new Transaction(amount, next.signum() < 0 ? BigDecimal.ZERO : next, Transaction.Type.WITHDRAW)
+                .setSuccessful(next.signum() >= 0)
+                .setReceiver(player);
+    }
+
+    @Override
+    public Transaction deposit(OfflinePlayer player, BigDecimal amount) {
+        return new Transaction(amount, getBalance(player).add(amount), Transaction.Type.DEPOSIT)
+                .setSuccessful(true)
+                .setReceiver(player);
+    }
+}
 ```
 
----
+```java
+// onEnable
+EconomyProvider backend = new MyEconomyBackend();
+boolean registered = EconomyProvider.register(this, backend);
+if (!registered) return;
 
-## 🔍 API Overview
+EconomyProvider active = EconomyProvider.detect(backend);
 
-### `ChatAdapter<T>`
+// onDisable
+EconomyProvider.unregister(backend);
+```
 
-* `@Nullable String getPrimaryGroup(Player)`
-* `boolean isInGroup(Player, String)`
-* `@NotNull List<String> getGroups(Player)`
-* `@Nullable String getPrefix(Player)`
-* `@Nullable String getSuffix(Player)`
-* `@Nullable String getGroupPrefix(@Nullable World, String)` + convenience overload
-* `@Nullable String getGroupSuffix(@Nullable World, String)` + convenience overload
-* `boolean isEnabled()`, `Plugin getPlugin()`, `T getSource()`, `<V> V fromSource(Function<T,V>)`
-* `static ChatAdapter<?> create()`
+### Register Your Own Permission Provider
 
-### `EconomyAdapter<T>`
+```java
+import me.croabeast.vault.permission.PermissionProvider;
 
-* `@NotNull BigDecimal getBalance(OfflinePlayer)`
-* `boolean hasAccount(OfflinePlayer)`
-* `boolean createAccount(OfflinePlayer)`
-* `boolean hasAmount(OfflinePlayer, BigDecimal)` + convenience overload
-* `@NotNull Transaction withdraw(OfflinePlayer, BigDecimal)` + convenience overload
-* `@NotNull Transaction deposit(OfflinePlayer, BigDecimal)` + convenience overload
-* `boolean isEnabled()`, `Plugin getPlugin()`, `T getSource()`, `<V> V fromSource(Function<T,V>)`
-* `static EconomyAdapter<?> create()`
+public final class YourPlugin extends JavaPlugin {
+
+    private PermissionProvider permissionBackend;
+
+    @Override
+    public void onEnable() {
+        permissionBackend = new MyPermissionBackend(); // your implementation
+        boolean registered = PermissionProvider.register(this, permissionBackend);
+        if (!registered) return;
+
+        PermissionProvider active = PermissionProvider.detect(permissionBackend);
+    }
+
+    @Override
+    public void onDisable() {
+        if (permissionBackend != null) {
+            PermissionProvider.unregister(permissionBackend);
+        }
+    }
+}
+```
+
+### Register Your Own Chat Provider
+
+`ChatProvider` must expose a `PermissionProvider` through `getPermissionProvider()`, so when you own both backends, register permission first.
+
+```java
+import me.croabeast.vault.chat.ChatProvider;
+import me.croabeast.vault.permission.PermissionProvider;
+
+public final class YourPlugin extends JavaPlugin {
+
+    private PermissionProvider permissionBackend;
+    private ChatProvider chatBackend;
+
+    @Override
+    public void onEnable() {
+        permissionBackend = new MyPermissionBackend(); // your implementation
+        PermissionProvider.register(this, permissionBackend);
+
+        chatBackend = new MyChatBackend(permissionBackend); // your implementation
+        boolean registered = ChatProvider.register(this, chatBackend);
+        if (!registered) return;
+
+        ChatProvider activeChat = ChatProvider.detect(chatBackend);
+        PermissionProvider activePermissions = activeChat.getPermissionProvider();
+    }
+
+    @Override
+    public void onDisable() {
+        if (chatBackend != null) {
+            ChatProvider.unregister(chatBackend);
+        }
+        if (permissionBackend != null) {
+            PermissionProvider.unregister(permissionBackend);
+        }
+    }
+}
+```
+
+## API Summary
+
+### `ChatProvider`
+
+- `@NotNull String getName()`
+- `boolean isEnabled()`
+- `@NotNull PermissionProvider getPermissionProvider()`
+- `@Nullable String getPrefix(Player)`
+- `@Nullable String getPrefix(@Nullable World, Player)`
+- `void setPrefix(@Nullable World, Player, @Nullable String)`
+- `@Nullable String getSuffix(Player)`
+- `@Nullable String getSuffix(@Nullable World, Player)`
+- `void setSuffix(@Nullable World, Player, @Nullable String)`
+- `@Nullable String getGroupPrefix(@Nullable World, String)`
+- `void setGroupPrefix(@Nullable World, String, @Nullable String)`
+- `@Nullable String getGroupSuffix(@Nullable World, String)`
+- `void setGroupSuffix(@Nullable World, String, @Nullable String)`
+- `get/set` player and group metadata for `int`, `double`, `boolean`, `String`
+- `static ChatProvider detect()`
+- `static ChatProvider detect(ChatProvider self)`
+- `static boolean register(Plugin, ChatProvider)`
+- `static boolean unregister(ChatProvider)`
+
+### `PermissionProvider`
+
+- `@NotNull String getName()`
+- `boolean isEnabled()`
+- `boolean hasPermission(CommandSender, String)`
+- `boolean hasPermission(@Nullable World, Player, String)`
+- `@Nullable String getPrimaryGroup(Player)`
+- `@Nullable String getPrimaryGroup(@Nullable World, Player)`
+- `boolean isInGroup(Player, String)`
+- `boolean isInGroup(@Nullable World, Player, String)`
+- `@NotNull List<String> getGroups(Player)`
+- `@NotNull List<String> getGroups(@Nullable World, Player)`
+- `@NotNull List<String> getGroups()`
+- `boolean addPermission(@Nullable World, Player, String)`
+- `boolean removePermission(@Nullable World, Player, String)`
+- `boolean hasGroupPermission(@Nullable World, String, String)`
+- `boolean addGroupPermission(@Nullable World, String, String)`
+- `boolean removeGroupPermission(@Nullable World, String, String)`
+- `boolean addGroup(@Nullable World, Player, String)`
+- `boolean removeGroup(@Nullable World, Player, String)`
+- `boolean hasGroupsSupport()`
+- `static PermissionProvider detect()`
+- `static PermissionProvider detect(PermissionProvider self)`
+- `static boolean register(Plugin, PermissionProvider)`
+- `static boolean unregister(PermissionProvider)`
+
+### `EconomyProvider`
+
+- `@NotNull String getName()`
+- `boolean isEnabled()`
+- `@NotNull String getCurrencyName(boolean single)`
+- `int getDecimals()`
+- `@NotNull BigDecimal getBalance(OfflinePlayer)`
+- `boolean hasAccount(OfflinePlayer)`
+- `boolean createAccount(OfflinePlayer)`
+- `boolean hasAmount(OfflinePlayer, BigDecimal)` (+ primitive overload)
+- `@NotNull Transaction withdraw(OfflinePlayer, BigDecimal)` (+ primitive overload)
+- `@NotNull Transaction deposit(OfflinePlayer, BigDecimal)` (+ primitive overload)
+- `@NotNull Transaction set(OfflinePlayer, BigDecimal)` (+ primitive overload)
+- `@NotNull Transaction transfer(CommandSender, OfflinePlayer, BigDecimal)` (+ primitive overload)
+- `static EconomyProvider detect()`
+- `static EconomyProvider detect(EconomyProvider self)`
+- `static boolean register(Plugin, EconomyProvider)`
+- `static boolean unregister(EconomyProvider)`
 
 ### `Transaction`
 
-* `@NotNull BigDecimal getAmount()`
-* `@NotNull BigDecimal getBalance()`
-* `@NotNull Transaction.Type getType()` (`DEPOSIT` / `WITHDRAW`)
-* `boolean isSuccessful()`
-* `OfflinePlayer getPlayer()`
+- `BigDecimal getAmount()`
+- `BigDecimal getBalance()`
+- `Transaction.Type getType()`:
+  - `DEPOSIT`
+  - `WITHDRAW`
+  - `SET`
+  - `TRANSFER`
+- `boolean isSuccessful()`
+- `CommandSender getSender()`
+- `OfflinePlayer getReceiver()`
 
----
+## Notes
 
-## 🧠 Conventions & Notes
-
-* **Nullability**: Some metadata (prefix/suffix/primary group) may be absent → returns `null`.
-* **World context**: If a provider doesn’t support per-world values, the world parameter is ignored.
-* **Threading**: Call from the **main server thread** unless your provider explicitly states otherwise.
-* **Formatting**: Returned prefixes/suffixes may contain legacy color codes. Translate or strip as needed.
-* **Amounts**: Prefer `BigDecimal` overloads for exact values; invalid/negative amounts produce failed transactions (`isSuccessful() == false`).
-* **Fallback source**: `getSource()` on fallback adapters throws `IllegalStateException`; use `isEnabled()` checks first.
-
----
-
-## 🛠 Extending
-
-You can add new providers by implementing the interfaces and adjusting the detection inside `create()`:
-
-* For chat: implement `ChatAdapter<T>` (e.g., `ChatLuckPerms`, `ChatVault2`, `ChatVaultImpl`, `ChatFallback`).
-* For economy: implement `EconomyAdapter<T>` (e.g., `Economy2`, `EconomyImpl`, `EconomyFallback`).
-
-Follow the same semantics:
-
-* Never throw for “provider not present”; report safe defaults.
-* Keep world optional and case-insensitive group comparisons.
-* Ensure `isEnabled()` reflects actual availability.
-
----
-
-## ✅ Quick Checklist
-
-* [ ] Added the repository and dependency with `{version}`
-* [ ] Declared `softdepend` on `LuckPerms`, `VaultUnlocked`, and `Vault`
-* [ ] Accessed adapters only on the main thread
-* [ ] Handled `null` prefixes/suffixes/primary groups
-* [ ] Checked `Transaction#isSuccessful()` for economy mutations
-
----
+- Metadata methods may return `null` when the provider has no value.
+- World context is optional and may be ignored by providers without per-world data.
+- Run provider operations on the main server thread unless your backend explicitly supports async access.
+- Prefer `BigDecimal` economy overloads for exact amounts.

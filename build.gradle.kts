@@ -40,6 +40,7 @@ tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
     sourceCompatibility = "1.8"
     targetCompatibility = "1.8"
+    options.compilerArgs.add("-Xlint:-options")
 }
 
 tasks.shadowJar {
